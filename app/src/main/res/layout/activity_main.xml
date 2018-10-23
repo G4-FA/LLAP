@@ -1,0 +1,96 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.g4ap.llap.MainActivity" >
+
+    <ImageView
+        android:id="@+id/act_main_imageview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/act_main_seekbar"
+        android:layout_below="@+id/act_main_curpath"/>
+
+    <ListView
+        android:id="@+id/act_main_listview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/act_main_seekbar"
+        android:layout_below="@+id/act_main_curpath" >
+    </ListView>
+
+    <TextView
+        android:id="@+id/act_main_curpath"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:text="LiveLib"
+        android:textColor="#808080FF" />
+
+    <SeekBar
+        android:id="@+id/act_main_seekbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/act_main_playpause"
+        android:layout_alignLeft="@+id/act_main_listview"
+        android:layout_toLeftOf="@+id/act_main_barpos" />
+
+    <TextView
+        android:id="@+id/act_main_barpos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/act_main_seekbar"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="7dp"
+        android:text="00:00 / 00:00" />
+
+    <Button
+        android:id="@+id/act_main_playpause"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:text=">||" />
+
+    <Button
+        android:id="@+id/act_main_seektop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/act_main_playnext"
+        android:layout_alignBottom="@+id/act_main_playnext"
+        android:layout_toLeftOf="@+id/act_main_playnext"
+        android:text="|&lt;" />
+
+    <Button
+        android:id="@+id/act_main_seekminus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/act_main_playpause"
+        android:layout_alignBottom="@+id/act_main_playpause"
+        android:layout_toRightOf="@+id/act_main_playpause"
+        android:text="&lt;" />
+
+    <Button
+        android:id="@+id/act_main_seekplus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/act_main_seektop"
+        android:layout_alignBottom="@+id/act_main_seektop"
+        android:layout_centerHorizontal="true"
+        android:text=">" />
+
+    <Button
+        android:id="@+id/act_main_playnext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/act_main_seekminus"
+        android:layout_alignBottom="@+id/act_main_seekminus"
+        android:layout_alignRight="@+id/act_main_barpos"
+        android:text=">>|" />
+
+</RelativeLayout>
