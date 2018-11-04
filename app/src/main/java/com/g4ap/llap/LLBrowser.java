@@ -1,5 +1,4 @@
 package com.g4ap.llap;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +33,8 @@ public class LLBrowser
 
 	public LLBrowser()
 	{
-		m_RootDir = loadConfig();
+		//m_RootDir = loadConfig();
+		m_RootDir = "/sdcard/LiveLib/";
 		setCurDir( "default" );
 		m_CoverCache = new HashMap<String,Bitmap>();
 		
@@ -298,64 +298,7 @@ public class LLBrowser
 		{
 		}
 	}
-	
-	
-	/*
-    private String[] strDigits = { "0", "1", "2", "3", "4", "5",
-        "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" };
 
-
-// ������ʽΪ���ָ��ַ���
-private String byteToArrayString(byte bByte) {
-    int iRet = bByte;
-    // System.out.println("iRet="+iRet);
-    if (iRet < 0) {
-        iRet += 256;
-    }
-    int iD1 = iRet / 16;
-    int iD2 = iRet % 16;
-    return strDigits[iD1] + strDigits[iD2];
-}
-
-
-private String byteToString(byte[] bByte) {
-    StringBuffer sBuffer = new StringBuffer();
-    for (int i = 0; i < bByte.length; i++) {
-        sBuffer.append(byteToArrayString(bByte[i]));
-    }
-    return sBuffer.toString();
-}
-
-
-	public void calcdirmd5( File checkDir, MessageDigest messageDigest, OutputStreamWriter name, OutputStreamWriter md5 )
-	{
-		File curFiles[] = checkDir.listFiles();
-		
-		if ( curFiles == null )
-		{
-			return;
-		}
-		for ( File f : curFiles )
-		{
-			if ( f.isDirectory() )
-			{
-				byte[] curmd5 = messageDigest.digest( f.getName().getBytes() );
-				try
-				{
-				name.write( f.getName() + "\n" );
-				md5.write( byteToString(curmd5) + "\n" );
-				}
-				catch(Exception e)
-				{
-				}
-				
-				calcdirmd5( f, messageDigest, name, md5 );
-			}
-		}
-		
-	}
-*/
-	
 }
 
 

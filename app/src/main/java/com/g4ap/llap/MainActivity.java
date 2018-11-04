@@ -45,9 +45,8 @@ import org.json.JSONObject;
 
 public class MainActivity extends Activity
 {
-	
+
 	private Service_MusicPlayer m_Service;
-	private AlertDialog m_bindDialog;
 	
 	private TextView m_tvPlayingFilename;
 	private ListView m_lvLiveLib;
@@ -74,16 +73,6 @@ public class MainActivity extends Activity
 		m_Service = null;
         Intent intent = new Intent( this, Service_MusicPlayer.class );
         bindService(intent, conn, Context.BIND_AUTO_CREATE);
-        
-        // show wait dialog
-        m_bindDialog = null;
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);  
-        m_bindDialog = builder.setMessage("binding service").create();
-        m_bindDialog.show();
-
-        // init view
-        initView();
-
 	}
 	
 	
@@ -110,35 +99,7 @@ public class MainActivity extends Activity
         m_lvLiveLib.setAdapter( m_MyLLAdapter );
         m_lvLiveLib.setOnItemClickListener( m_MyLLAdapter );
         
-        
-/*
-        
-        
-        
-        
-try
-{
-		MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-        FileOutputStream namefile = new FileOutputStream( "/sdcard/_U/LiveLib/name.txt", true );
-        FileOutputStream md5file = new FileOutputStream( "/sdcard/_U/LiveLib/md5.txt", true );
-        OutputStreamWriter name = new OutputStreamWriter(namefile);
-        OutputStreamWriter md5 = new OutputStreamWriter(md5file);
-        
-        File curFile = new File( "/sdcard/_U/LiveLib" );
-        m_MyLLAdapter.m_MyBrowser.calcdirmd5( curFile, messageDigest, name, md5  );
-        
-        name.close();
-        md5.close();
-}
-catch(Exception e)
-{
-	
-}
-        
-        //ok = m_MyLLAdapter.m_MyBrowser.checkuniqu( chk );
-        //m_tvPlayingFilename.setText( "ret = "+ ok + " count = " + m_MyLLAdapter.m_MyBrowser.m_checkSetCount );
-	    
-		*/
+
         m_btnPlayPause.setOnClickListener(new Button.OnClickListener()
 		{
 			@Override
@@ -472,14 +433,17 @@ catch(Exception e)
         {
         	// sync var
             m_Service = ((Service_MusicPlayer.Service_MusicPlayerBinder)service).getService();
-            // close wait dialog
-            m_bindDialog.dismiss();
+
+            // setup ui
+            initView();
+
             // update listview
             String strCurDir = m_Service.getPlayDir();
             if ( strCurDir != null )
             {
             	m_MyLLAdapter.setCurDir(strCurDir);
             }
+
             // start update thread
             handler.post(updateThread);
         }
