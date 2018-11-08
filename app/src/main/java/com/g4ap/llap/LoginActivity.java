@@ -28,10 +28,11 @@ public class LoginActivity extends Activity
 		public void onClick(View v)
 		{
 
-			Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-			startActivity(intent);
-			finish();
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+            startActivity(intent);
+            finish();
 
+            /*
 			new Thread(new Runnable(){
 				@Override
 				public void run() {
@@ -45,9 +46,9 @@ public class LoginActivity extends Activity
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-
 				}
 			}).start();
+            */
 
 		}
 	};

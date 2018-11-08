@@ -12,6 +12,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.List;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -21,6 +22,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -61,6 +63,7 @@ public class MainActivity extends Activity
     private Button m_btnPlayNext;
 	
 	private MyLLAdapter m_MyLLAdapter;
+	private MyCOSLLAdapter cosllAdapter;
 	
 
 	@Override
@@ -74,10 +77,50 @@ public class MainActivity extends Activity
         Intent intent = new Intent( this, Service_MusicPlayer.class );
         bindService(intent, conn, Context.BIND_AUTO_CREATE);
 	}
+
+    ServiceConnection conn = new ServiceConnection()
+    {
+        @Override
+        public void onServiceDisconnected(ComponentName name) {}
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service)
+        {
+            // sync var
+            m_Service = ((Service_MusicPlayer.Service_MusicPlayerBinder)service).getService();
+
+
+            AsyncTask<String,Void,String> syncTaskInitUI = new AsyncTask<String, Void, String>() {
+
+                @Override
+                protected void onPreExecute() {
+                    super.onPreExecute();
+                }
+
+                @Override
+                protected String doInBackground( String... arg ) {
+                    cosllAdapter = new MyCOSLLAdapter( getApplicationContext() );
+                    return "ok";
+                }
+
+                @Override
+                protected void onPostExecute( String ret ) {
+                    // setup ui
+                    initView();
+                    // update listview
+                    String strCurDir = m_Service.getPlayDir();
+                    if ( strCurDir != null )
+                    {
+                        m_MyLLAdapter.setCurDir(strCurDir);
+                    }
+                    // start update thread
+                    handler.post(updateThread);
+                }
+            };
+            syncTaskInitUI.execute();
+        }
+    };
 	
-	
-	private void initView()
-	{
+	private void initView() {
 
 		m_tvPlayingFilename = (TextView)findViewById(R.id.act_main_curpath);
 		m_lvLiveLib = (ListView)findViewById(R.id.act_main_listview);
@@ -94,11 +137,13 @@ public class MainActivity extends Activity
 		m_btnPlayNext = (Button)findViewById(R.id.act_main_playnext);
 	
 
-		m_MyLLAdapter = new MyLLAdapter();
-        m_MyLLAdapter.setCurDir( "default" );
-        m_lvLiveLib.setAdapter( m_MyLLAdapter );
-        m_lvLiveLib.setOnItemClickListener( m_MyLLAdapter );
-        
+		//m_MyLLAdapter = new MyLLAdapter();
+        //m_MyLLAdapter.setCurDir( "default" );
+        //m_lvLiveLib.setAdapter( m_MyLLAdapter );
+        //m_lvLiveLib.setOnItemClickListener( m_MyLLAdapter );
+
+		m_lvLiveLib.setAdapter( cosllAdapter );
+		m_lvLiveLib.setOnItemClickListener( cosllAdapter );
 
         m_btnPlayPause.setOnClickListener(new Button.OnClickListener()
 		{
@@ -172,7 +217,6 @@ public class MainActivity extends Activity
 	    
 	}
 	
-	
 	@Override
 	protected void onDestroy()
 	{
@@ -212,7 +256,7 @@ public class MainActivity extends Activity
 	{
 		if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0)
 		{
-			if ( m_MyLLAdapter.gotoUpperDir() )
+			if ( cosllAdapter.cosLLBrowser.gotoUpperDir() == 1 )
 			{
 				return true;
 			}
@@ -357,10 +401,10 @@ public class MainActivity extends Activity
 	int m_CoverTimer = 0;
 
 	Handler handler = new Handler();
-	Runnable updateThread = new Runnable()
-	{
-		public void run()
-		{
+	Runnable updateThread = new Runnable() {
+		@Override
+		public void run() {
+
 			if ( m_Service.getPlayDir() != null && m_Service.getPlayFilename() != null && m_Service.getPlayFileRealPath() != null )
 			{
 				String strCurPlay = m_Service.getPlayDir() + "/" + m_Service.getPlayFilename();
@@ -423,30 +467,104 @@ public class MainActivity extends Activity
 		}
 	};
 	
-	
-    ServiceConnection conn = new ServiceConnection()
-    {
-        @Override  
-        public void onServiceDisconnected(ComponentName name) {}  
-        @Override  
-        public void onServiceConnected(ComponentName name, IBinder service)
-        {
-        	// sync var
-            m_Service = ((Service_MusicPlayer.Service_MusicPlayerBinder)service).getService();
 
-            // setup ui
-            initView();
+}
 
-            // update listview
-            String strCurDir = m_Service.getPlayDir();
-            if ( strCurDir != null )
-            {
-            	m_MyLLAdapter.setCurDir(strCurDir);
-            }
+class MyCOSLLAdapter extends BaseAdapter implements OnItemClickListener
+{
+	public COSLLBrowser cosLLBrowser;
+	private Context myContext;
+	private int colorSel = Color.rgb(128, 128, 128);
+	private int colorNor = Color.rgb(0, 0, 0);
 
-            // start update thread
-            handler.post(updateThread);
-        }
-    };
-	
+	public MyCOSLLAdapter( Context context ) {
+
+		myContext = context;
+
+		LLCOSUtils llCosUtil = new LLCOSUtils();
+		List<tObjectInfo> COSObjList = llCosUtil.getAllCOSObjectList( myContext );
+
+		cosLLBrowser = new COSLLBrowser();
+		try {
+			cosLLBrowser.Init( COSObjList );
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	@Override
+	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3)
+	{
+		if ( arg2 == 0 ) {
+			cosLLBrowser.gotoUpperDir();
+			notifyDataSetChanged();
+			return;
+		}
+
+		llClickType ret = cosLLBrowser.onItemClick( arg2-1 );
+		switch ( ret )
+		{
+			case FOLDER:
+				notifyDataSetChanged();
+				break;
+		}
+	}
+
+	@Override
+	public int getCount() {
+
+		if ( cosLLBrowser.browsingNode == null ) return 0;
+		return cosLLBrowser.browsingNode.childs.size()+1;
+	}
+
+	@Override
+	public Object getItem(int position) {
+
+		if ( cosLLBrowser.browsingNode == null ) return null;
+		if ( position == 0 ) return null;
+		return cosLLBrowser.browsingNode.childs.get(position-1);
+	}
+
+	@Override
+	public long getItemId(int position)
+	{
+		return position;
+	}
+
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent)
+	{
+		if ( convertView == null )
+		{
+			convertView = LayoutInflater.from(myContext).inflate(R.layout.listlayout_ll, parent, false);
+			//convertView = LayoutInflater.from(getApplicationContext()).inflate(R.layout.listlayout_lld, parent, false);
+		}
+
+		TextView tvFilename = (TextView)convertView.findViewById(R.id.ll_ll_filename);
+		//TextView tvFilename = (TextView)convertView.findViewById(R.id.ll_lld_filename);
+
+
+		String strFileName;
+		if ( position == 0 ) {
+			strFileName = "...";
+		}
+		else {
+			strFileName = cosLLBrowser.browsingNode.childs.get(position-1).name;
+		}
+		tvFilename.setText( strFileName );
+
+		int curColor = colorNor;
+		//if ( m_Service != null && m_Service.getPlayDir() != null && m_Service.getPlayFilename() != null )
+		//{
+		//	if ( m_MyBrowser.m_CurDir.equals(m_Service.getPlayDir()) && strFileName.equals(m_Service.getPlayFilename()) )
+		//	{
+		//		curColor = colorSel;
+		//	}
+		//}
+		tvFilename.setTextColor( curColor );
+
+		return convertView;
+	}
+
 }

@@ -51,8 +51,8 @@ enum llClickType {
 public class COSLLBrowser {
 
     private llObjectNode rootNode;
-    private llObjectNode browsingNode;
-    private llObjectNode playingNode;
+    public llObjectNode browsingNode;
+    public llObjectNode playingNode;
 
 
     // 根据COS对象列表构建目录树
@@ -105,6 +105,17 @@ public class COSLLBrowser {
         }
 
         return llClickType.OTHER;
+    }
+
+    // 回到上一级目录浏览
+    public int gotoUpperDir() {
+        if ( browsingNode.parent != null )
+        {
+            browsingNode = browsingNode.parent;
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
 
@@ -222,7 +233,7 @@ public class COSLLBrowser {
         Iterator<llObjectNode> itTSet = parent.childs.iterator();
         while( itTSet.hasNext() ) {
             llObjectNode curNode = itTSet.next();
-            if ( curNode.key.equals(Name) ) return curNode;
+            if ( curNode.name.equals(Name) ) return curNode;
         }
 
         // 能走到这里说明尚未建立
