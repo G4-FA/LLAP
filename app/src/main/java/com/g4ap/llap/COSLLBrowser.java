@@ -85,7 +85,7 @@ public class COSLLBrowser {
         }
 
         if ( isAudioFile(clickNode.key) ) {
-            if ( playingNode.parent == clickNode.parent ) {
+            if ( playingNode != null && playingNode.parent == clickNode.parent ) {
                 playingNode = clickNode;
                 return llClickType.AUDIO_SAMEDIR;
             } else {
@@ -95,7 +95,7 @@ public class COSLLBrowser {
         }
 
         if ( isVedioFile(clickNode.key) ) {
-            if ( playingNode.parent == clickNode.parent ) {
+            if ( playingNode != null && playingNode.parent == clickNode.parent ) {
                 playingNode = clickNode;
                 return llClickType.VEDIO_SAMEDIR;
             } else {

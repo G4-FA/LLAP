@@ -42,7 +42,7 @@ public class LLCOSUtils {
                 .setAppidAndRegion("1257773597", "ap-chengdu")
                 .setDebuggable(true)
                 .builder();
-        QCloudCredentialProvider credentialProvider = new ShortTimeCredentialProvider( "", "", 300);
+        QCloudCredentialProvider credentialProvider = new ShortTimeCredentialProvider( "AKID8Abx87oxfpwAPpyWWP6bv41ubO2X6l8J", "jLl03uZDvShx2xgEesuvwwkQm273oNku", 300);
         CosXmlService cosXmlService = new CosXmlService(context, serviceConfig, credentialProvider);
 
         List<tObjectInfo> retList = new ArrayList<tObjectInfo>();
