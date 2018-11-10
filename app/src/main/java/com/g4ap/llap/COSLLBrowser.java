@@ -267,10 +267,10 @@ public class COSLLBrowser {
 
     private boolean isVedioFile( String filename )
     {
-        if ( filename.endsWith(".mp4") ||
-                filename.endsWith(".MP4") ) {
-            return true;
-        }
+        //if ( filename.endsWith(".mp4") ||
+         //       filename.endsWith(".MP4") ) {
+         //   return true;
+        //}
 
         return false;
     }
