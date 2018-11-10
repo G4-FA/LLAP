@@ -205,24 +205,7 @@ public class LLBrowser
 		return ret;
 	}
 	
-	
-	public LLPlayList genCurPlayList()
-	{
-		LLPlayList ret = new LLPlayList();
-		
-		ret.m_PlayDir = m_CurDir;
-		ret.m_CurPlay = new t_LLPLItem();
-		ret.m_List = new ArrayList<t_LLPLItem>();
-		for ( t_LLItem cur : m_CurList )
-		{
-			t_LLPLItem newItem = new t_LLPLItem();
-			newItem.m_Name = cur.m_Name;
-			newItem.m_RealPath = cur.m_RealPath;
-			ret.m_List.add( newItem );
-		}
-		
-		return ret;
-	}
+
 
 	
 	public boolean gotoUpperDir()

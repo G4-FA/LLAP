@@ -1,21 +1,8 @@
 package com.g4ap.llap;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.List;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -41,13 +28,10 @@ import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 public class MainActivity extends Activity
 {
-
+	private COSLLBrowser cosLLBrowser;
+	private MyCOSLLAdapter cosLLAdapter;
 	private Service_MusicPlayer m_Service;
 	
 	private TextView m_tvPlayingFilename;
@@ -61,10 +45,6 @@ public class MainActivity extends Activity
     private Button m_btnSeekPlus;
     private Button m_btnSeekTop;
     private Button m_btnPlayNext;
-	
-	private MyLLAdapter m_MyLLAdapter;
-	private MyCOSLLAdapter cosllAdapter;
-	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -88,7 +68,6 @@ public class MainActivity extends Activity
             // sync var
             m_Service = ((Service_MusicPlayer.Service_MusicPlayerBinder)service).getService();
 
-
             AsyncTask<String,Void,String> syncTaskInitUI = new AsyncTask<String, Void, String>() {
 
                 @Override
@@ -98,7 +77,18 @@ public class MainActivity extends Activity
 
                 @Override
                 protected String doInBackground( String... arg ) {
-                    cosllAdapter = new MyCOSLLAdapter( getApplicationContext() );
+
+					cosLLBrowser = new COSLLBrowser();
+					try {
+						cosLLBrowser.Init( getApplicationContext() );
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+					m_Service.init( cosLLBrowser );
+
+					cosLLAdapter = new MyCOSLLAdapter( getApplicationContext(), cosLLBrowser, m_Service );
+
                     return "ok";
                 }
 
@@ -106,12 +96,6 @@ public class MainActivity extends Activity
                 protected void onPostExecute( String ret ) {
                     // setup ui
                     initView();
-                    // update listview
-                    String strCurDir = m_Service.getPlayDir();
-                    if ( strCurDir != null )
-                    {
-                        m_MyLLAdapter.setCurDir(strCurDir);
-                    }
                     // start update thread
                     handler.post(updateThread);
                 }
@@ -135,15 +119,9 @@ public class MainActivity extends Activity
 	    m_btnSeekPlus = (Button)findViewById(R.id.act_main_seekplus);
 	    m_btnSeekTop = (Button)findViewById(R.id.act_main_seektop);
 		m_btnPlayNext = (Button)findViewById(R.id.act_main_playnext);
-	
 
-		//m_MyLLAdapter = new MyLLAdapter();
-        //m_MyLLAdapter.setCurDir( "default" );
-        //m_lvLiveLib.setAdapter( m_MyLLAdapter );
-        //m_lvLiveLib.setOnItemClickListener( m_MyLLAdapter );
-
-		m_lvLiveLib.setAdapter( cosllAdapter );
-		m_lvLiveLib.setOnItemClickListener( cosllAdapter );
+		m_lvLiveLib.setAdapter(cosLLAdapter);
+		m_lvLiveLib.setOnItemClickListener(cosLLAdapter);
 
         m_btnPlayPause.setOnClickListener(new Button.OnClickListener()
 		{
@@ -199,13 +177,10 @@ public class MainActivity extends Activity
 			}
 		});
 		
-		m_sbSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener()
-		{
+		m_sbSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
 			@Override
-			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
-			{
-				if (fromUser == true)
-				{
+			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+				if (fromUser == true) {
 					m_Service.seekTo(progress);
 				}
 			}
@@ -214,12 +189,10 @@ public class MainActivity extends Activity
 			@Override
 			public void onStopTrackingTouch(SeekBar seekBar) {}
 		});
-	    
 	}
 	
 	@Override
-	protected void onDestroy()
-	{
+	protected void onDestroy() {
 		super.onDestroy();
 		handler.removeCallbacks(updateThread);
 		unbindService(conn);
@@ -244,7 +217,7 @@ public class MainActivity extends Activity
 		}
 		else if ( id == R.id.action_addfav )
 		{
-			m_MyLLAdapter.m_MyBrowser.addCurToFav( m_Service.getPlayFileRealPath() + "/" + m_Service.getPlayFilename() );
+			//m_MyLLAdapter.m_MyBrowser.addCurToFav( m_Service.getPlayFileRealPath() + "/" + m_Service.getPlayFilename() );
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
@@ -252,150 +225,21 @@ public class MainActivity extends Activity
 	
 	
 	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event)
-	{
-		if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0)
-		{
-			if ( cosllAdapter.cosLLBrowser.gotoUpperDir() == 1 )
-			{
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+			if ( cosLLAdapter.gotoUpperDir() == 1 ) {
 				return true;
-			}
-			else
-			{
+			} else {
 				finish();
 				return true;
 			}
-
 		}
 		return super.onKeyDown(keyCode, event);
 	}
 	
-	
 
-	
-	private class MyLLAdapter extends BaseAdapter implements OnItemClickListener
-	{
 
-		private LLBrowser m_MyBrowser;
-	    private int colorSel = Color.rgb(128, 128, 128);
-	    private int colorNor = Color.rgb(0, 0, 0);
-		
-		public MyLLAdapter()
-		{
-			m_MyBrowser = new LLBrowser();
-		}
-
-		public void setCurDir( String strDir )
-		{
-			m_MyBrowser.setCurDir( strDir );
-			notifyDataSetChanged();
-		}
-		
-		
-		public boolean gotoUpperDir()
-		{
-			boolean ret = m_MyBrowser.gotoUpperDir();
-			if ( ret )
-			{
-				notifyDataSetChanged();
-			}
-			
-			return ret;
-		}
-		
-		@Override
-		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3)
-		{
-			t_LLItem clickItem = m_MyBrowser.onItemClick( arg2 );
-			switch ( clickItem.m_Type )
-			{
-			case PARENTDIR:
-			case DIR:
-			case PLDIR:
-				notifyDataSetChanged();
-				break;
-
-			case FILE:
-			case PLFILE:
-				if ( clickItem.m_Name.endsWith(".mp3") || clickItem.m_Name.endsWith(".wma") || clickItem.m_Name.endsWith(".wav") || clickItem.m_Name.endsWith(".m4a") ||
-						clickItem.m_Name.endsWith(".MP3") || clickItem.m_Name.endsWith(".WMA") || clickItem.m_Name.endsWith(".WAV") || clickItem.m_Name.endsWith(".M4A")
-						)
-				{
-					// need create new playlist
-					if ( m_Service.m_PL.m_PlayDir == null || !m_Service.m_PL.m_PlayDir.equals(m_MyBrowser.m_CurDir) )
-					{
-						LLPlayList newPL = m_MyBrowser.genCurPlayList();
-						newPL.m_CurPlay.m_Name = clickItem.m_Name;
-						newPL.m_CurPlay.m_RealPath = clickItem.m_RealPath;
-						
-						m_Service.setNewPlayList( newPL );
-						m_Service.startPlayer();
-					}
-					// play new file in cur playlist
-					else
-					{
-						t_LLPLItem playItem = new t_LLPLItem();
-						playItem.m_Name = clickItem.m_Name;
-						playItem.m_RealPath = clickItem.m_RealPath;
-						
-						m_Service.setNewPlayFile( playItem );
-						m_Service.startPlayer();
-					}
-				}
-				break;
-			}
-		}
-
-		@Override
-		public int getCount()
-		{
-			return m_MyBrowser.m_CurList.size();
-		}
-
-		@Override
-		public Object getItem(int position)
-		{
-			return m_MyBrowser.m_CurList.get(position);
-		}
-
-		@Override
-		public long getItemId(int position)
-		{
-			return position;
-		}
-
-		@Override
-		public View getView(int position, View convertView, ViewGroup parent)
-		{
-			if ( convertView == null )
-			{
-				convertView = LayoutInflater.from(getApplicationContext()).inflate(R.layout.listlayout_ll, parent, false);
-				//convertView = LayoutInflater.from(getApplicationContext()).inflate(R.layout.listlayout_lld, parent, false);
-			}
-
-			TextView tvFilename = (TextView)convertView.findViewById(R.id.ll_ll_filename);
-			//TextView tvFilename = (TextView)convertView.findViewById(R.id.ll_lld_filename);
-			String strFileName = m_MyBrowser.m_CurList.get(position).m_Name;
-			tvFilename.setText( strFileName );
-			
-			int curColor = colorNor;
-			if ( m_Service != null && m_Service.getPlayDir() != null && m_Service.getPlayFilename() != null )
-			{
-				if ( m_MyBrowser.m_CurDir.equals(m_Service.getPlayDir()) && strFileName.equals(m_Service.getPlayFilename()) )
-				{
-					curColor = colorSel;
-				}
-			}
-			tvFilename.setTextColor( curColor );
-			
-			return convertView;
-		}
-
-	}
-	
-	
-	String m_strLastPlay = "none";
-	String m_strLastDir = "none";
+	private llObjectNode lastPlayingNode = null;
 	ArrayList<Bitmap> m_CoverList = null;
 	int m_CurCover = 0;
 	int m_CoverTimer = 0;
@@ -405,58 +249,29 @@ public class MainActivity extends Activity
 		@Override
 		public void run() {
 
-			if ( m_Service.getPlayDir() != null && m_Service.getPlayFilename() != null && m_Service.getPlayFileRealPath() != null )
-			{
-				String strCurPlay = m_Service.getPlayDir() + "/" + m_Service.getPlayFilename();
-				if ( !strCurPlay.equals(m_strLastPlay) )
-				{
-					m_strLastPlay = strCurPlay;
-					m_tvPlayingFilename.setText( m_strLastPlay );
-					m_MyLLAdapter.notifyDataSetChanged();
-				}
-				
-				if ( !m_strLastDir.equals( m_Service.getPlayFileRealPath() ) )
-				{
-					m_strLastDir = m_Service.getPlayFileRealPath();
-					m_CoverList = m_MyLLAdapter.m_MyBrowser.getCoverImage( m_strLastDir );
-					m_CurCover = 0;
-					m_CoverTimer = 0;
-					if ( m_CoverList.size() <= 0 )
-					{
-						m_ivCover.setImageBitmap(null);
-					}
-					else
-					{
-						m_ivCover.setImageBitmap(m_CoverList.get(0)); 
-					}
-				}
+			if ( cosLLBrowser.playingNode != null && cosLLBrowser.playingNode != lastPlayingNode ) {
+				lastPlayingNode = cosLLBrowser.playingNode;
+				m_tvPlayingFilename.setText( lastPlayingNode.key );
 			}
 			
-			if ( m_CoverList != null && m_CoverList.size() > 0 )
-			{
+			if ( m_CoverList != null && m_CoverList.size() > 0 ) {
 				m_CoverTimer++;
-				if ( m_CoverTimer >= 15 )
-				{
+				if ( m_CoverTimer >= 15 ) {
 					m_CoverTimer = 0;
 					m_CurCover++;
-					if ( m_CurCover > m_CoverList.size()-1 )
-					{
+					if ( m_CurCover > m_CoverList.size()-1 ) {
 						m_CurCover = 0;
 					}
 					m_ivCover.setImageBitmap( m_CoverList.get(m_CurCover) ); 
 				}
 			}
-			
-			
+
 			int nCur = m_Service.getCurPos()/1000;
 			int nMax = m_Service.getMaxPos()/1000;
 			String strPos;
-			if ( nMax < 99*60 )
-			{
+			if ( nMax < 99*60 ) {
 				strPos = String.format("%02d:%02d / %02d:%02d", nCur/60, nCur%60, nMax/60, nMax%60 );
-			}
-			else
-			{
+			} else {
 				strPos = String.format("%03d:%03d / %03d:%03d", nCur/60, nCur%60, nMax/60, nMax%60 );
 			}
 			m_tvBarPos.setText( strPos );
@@ -470,57 +285,56 @@ public class MainActivity extends Activity
 
 }
 
-class MyCOSLLAdapter extends BaseAdapter implements OnItemClickListener
-{
-	public COSLLBrowser cosLLBrowser;
+class MyCOSLLAdapter extends BaseAdapter implements OnItemClickListener {
+
 	private Context myContext;
+	private COSLLBrowser cosLLBrowser;
+	private Service_MusicPlayer playerService;
+
 	private int colorSel = Color.rgb(128, 128, 128);
 	private int colorNor = Color.rgb(0, 0, 0);
 
-	public MyCOSLLAdapter( Context context ) {
-
+	public MyCOSLLAdapter( Context context, COSLLBrowser brower, Service_MusicPlayer service ) {
 		myContext = context;
+		cosLLBrowser = brower;
+		playerService = service;
+	}
 
-		LLCOSUtils llCosUtil = new LLCOSUtils();
-		List<tObjectInfo> COSObjList = llCosUtil.getAllCOSObjectList( myContext );
-
-		cosLLBrowser = new COSLLBrowser();
-		try {
-			cosLLBrowser.Init( COSObjList );
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
+	public int gotoUpperDir() {
+		int ret = cosLLBrowser.gotoUpperDir();
+		notifyDataSetChanged();
+		return ret;
 	}
 
 	@Override
-	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3)
-	{
+	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
 		if ( arg2 == 0 ) {
 			cosLLBrowser.gotoUpperDir();
-			notifyDataSetChanged();
 			return;
 		}
 
 		llClickType ret = cosLLBrowser.onItemClick( arg2-1 );
-		switch ( ret )
-		{
+		switch ( ret ) {
 			case FOLDER:
-				notifyDataSetChanged();
+				break;
+			case AUDIO_SAMEDIR:
+				playerService.playNewFile();
+				break;
+			case AUDIO_DIFFDIR:
+				playerService.playNewFile();
 				break;
 		}
+		notifyDataSetChanged();
 	}
 
 	@Override
 	public int getCount() {
-
 		if ( cosLLBrowser.browsingNode == null ) return 0;
 		return cosLLBrowser.browsingNode.childs.size()+1;
 	}
 
 	@Override
 	public Object getItem(int position) {
-
 		if ( cosLLBrowser.browsingNode == null ) return null;
 		if ( position == 0 ) return null;
 		return cosLLBrowser.browsingNode.childs.get(position-1);
@@ -533,8 +347,7 @@ class MyCOSLLAdapter extends BaseAdapter implements OnItemClickListener
 	}
 
 	@Override
-	public View getView(int position, View convertView, ViewGroup parent)
-	{
+	public View getView(int position, View convertView, ViewGroup parent) {
 		if ( convertView == null )
 		{
 			convertView = LayoutInflater.from(myContext).inflate(R.layout.listlayout_ll, parent, false);
@@ -543,7 +356,6 @@ class MyCOSLLAdapter extends BaseAdapter implements OnItemClickListener
 
 		TextView tvFilename = (TextView)convertView.findViewById(R.id.ll_ll_filename);
 		//TextView tvFilename = (TextView)convertView.findViewById(R.id.ll_lld_filename);
-
 
 		String strFileName;
 		if ( position == 0 ) {
@@ -555,13 +367,8 @@ class MyCOSLLAdapter extends BaseAdapter implements OnItemClickListener
 		tvFilename.setText( strFileName );
 
 		int curColor = colorNor;
-		//if ( m_Service != null && m_Service.getPlayDir() != null && m_Service.getPlayFilename() != null )
-		//{
-		//	if ( m_MyBrowser.m_CurDir.equals(m_Service.getPlayDir()) && strFileName.equals(m_Service.getPlayFilename()) )
-		//	{
-		//		curColor = colorSel;
-		//	}
-		//}
+		llObjectNode playingNode = cosLLBrowser.playingNode;
+		if ( playingNode != null && playingNode.name.equals(strFileName) ) { curColor = colorSel; }
 		tvFilename.setTextColor( curColor );
 
 		return convertView;

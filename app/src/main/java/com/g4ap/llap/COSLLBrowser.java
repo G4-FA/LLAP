@@ -1,4 +1,6 @@
 package com.g4ap.llap;
+import android.content.Context;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -50,22 +52,27 @@ enum llClickType {
 
 public class COSLLBrowser {
 
+    private LLCOSUtils cosUtil;
     private llObjectNode rootNode;
     public llObjectNode browsingNode;
     public llObjectNode playingNode;
 
 
     // 根据COS对象列表构建目录树
-    public llObjectNode Init( List<tObjectInfo> COSObjList ) throws Exception {
+    public llObjectNode Init( Context con  ) throws Exception {
+
+        cosUtil = new LLCOSUtils();
+        cosUtil.init( con );
 
         rootNode = new llObjectNode( "LiveLib", "DIR_KEY",0,"DIR_ETAG",1,null);
         browsingNode = rootNode;
         playingNode = null;
 
+        List<tObjectInfo> COSObjList = cosUtil.getAllCOSObjectList();
         int len = LLCOSUtils.COS_ROOT_DIR.length();
         for( int i=0; i<COSObjList.size(); i++) {
             tObjectInfo info = COSObjList.get(i);
-            InsertCOSObject( rootNode, info.key.substring(len), info.key.substring(len), info.size, info.etag );
+            InsertCOSObject( rootNode, info.key.substring(len), info.key, info.size, info.etag );
         }
 
         return browsingNode;
@@ -120,7 +127,7 @@ public class COSLLBrowser {
 
 
     // 当前播放已经结束 请求点击播放下个媒体文件
-    public llClickType playNextMedia() {
+    public llClickType goToNextMedia() {
 
         if ( playingNode == null ) return llClickType.NULL;
 
@@ -178,6 +185,10 @@ public class COSLLBrowser {
 
         return llClickType.NULL;
 
+    }
+
+    public String getLocalFile( String key, String eTag  ) {
+        return cosUtil.getLocalFile( key, eTag );
     }
 
 

@@ -3,20 +3,20 @@ package com.g4ap.llap;
 import android.app.Service;
 import android.content.Intent;
 import android.media.MediaPlayer;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
 
 public class Service_MusicPlayer extends Service
 {
-	LLPlayList m_PL;
     PlayerState	m_State;
     public enum PlayerState
     {
     	Nil, Initialized, Playing, Pause
     }
-	
 	private IBinder binder = new Service_MusicPlayerBinder();
 	private MediaPlayer m_mpPlayer;
+	private COSLLBrowser cosLLBrowser;
 
 	@Override
 	public IBinder onBind(Intent arg0)
@@ -24,13 +24,11 @@ public class Service_MusicPlayer extends Service
 		return binder;
 	}
 
-
 	@Override
 	public void onCreate()
 	{
 		super.onCreate();
-		
-		m_PL = new LLPlayList();
+
 		m_mpPlayer = new MediaPlayer();
 		m_mpPlayer.setOnCompletionListener( new MyOnCompletionListener() );
 		m_State = PlayerState.Nil;
@@ -51,44 +49,47 @@ public class Service_MusicPlayer extends Service
 	{
 
 	}
-	
-	
-	
-    public void setNewPlayFile( t_LLPLItem playItem )
-    {
-    	m_mpPlayer.reset();
-    	
-    	m_PL.m_CurPlay = playItem;
-    	
-		try
-		{
-			m_mpPlayer.setDataSource( playItem.m_RealPath + "/" + playItem.m_Name );
-			m_mpPlayer.prepare();
-		}
-		catch( Exception e )
-		{
-		}
 
-    	m_State = PlayerState.Initialized;
-    }
-    
-    
-    public void setNewPlayList( LLPlayList playlist )
-    {
-    	m_mpPlayer.reset();
-    	
-    	m_PL = playlist;
-    	
-		try
-		{
-			m_mpPlayer.setDataSource( m_PL.m_CurPlay.m_RealPath + "/" + m_PL.m_CurPlay.m_Name );
-			m_mpPlayer.prepare();
-		}
-		catch( Exception e )
-		{
-		}
+	public void init( COSLLBrowser browser )
+	{
+		cosLLBrowser = browser;
+	}
 
-    	m_State = PlayerState.Initialized;
+
+    public void playNewFile()
+    {
+		m_mpPlayer.reset();
+		m_State = PlayerState.Nil;
+
+		AsyncTask<String,Void,String> syncTaskPlayNewFile = new AsyncTask<String,Void,String>() {
+
+			@Override
+			protected void onPreExecute() {
+				super.onPreExecute();
+			}
+
+			@Override
+			protected String doInBackground( String... arg ) {
+				String filename = cosLLBrowser.getLocalFile( cosLLBrowser.playingNode.key, cosLLBrowser.playingNode.eTag );
+				return filename;
+			}
+
+			@Override
+			protected void onPostExecute( String filename ) {
+				try {
+					m_mpPlayer.reset();
+					m_mpPlayer.setDataSource( filename );
+					m_mpPlayer.prepare();
+					m_State = PlayerState.Initialized;
+					startPlayer();
+				}
+				catch(Exception e)  {
+					e.printStackTrace();
+				}
+			}
+		};
+		syncTaskPlayNewFile.execute();
+
     }
 	
     public void startPlayer()
@@ -136,26 +137,40 @@ public class Service_MusicPlayer extends Service
     
     public boolean playNext()
     {
-    	if ( m_PL.moveToNext() )
-    	{
-			try
-			{
-				m_mpPlayer.reset();
-				m_mpPlayer.setDataSource( m_PL.m_CurPlay.m_RealPath + "/" + m_PL.m_CurPlay.m_Name );
-				m_mpPlayer.prepare();
-				m_mpPlayer.start();
-				return true;
+    	if ( cosLLBrowser.goToNextMedia() != llClickType.AUDIO_SAMEDIR ) return false;
+
+		m_mpPlayer.reset();
+		m_State = PlayerState.Nil;
+
+		AsyncTask<String,Void,String> syncTaskPlayNext = new AsyncTask<String,Void,String>() {
+
+			@Override
+			protected void onPreExecute() {
+				super.onPreExecute();
 			}
-			catch(Exception e)
-			{
-				return false;
+
+			@Override
+			protected String doInBackground( String... arg ) {
+				String filename = cosLLBrowser.getLocalFile( cosLLBrowser.playingNode.key, cosLLBrowser.playingNode.eTag );
+				return filename;
 			}
-    	}
-    	else
-    	{
-    		return false;
-    	}
-    	
+
+			@Override
+			protected void onPostExecute( String filename ) {
+				try {
+					m_mpPlayer.reset();
+					m_mpPlayer.setDataSource( filename );
+					m_mpPlayer.prepare();
+					m_State = PlayerState.Initialized;
+					startPlayer();
+				}
+				catch(Exception e)  {
+					e.printStackTrace();
+				}
+			}
+		};
+		syncTaskPlayNext.execute();
+		return true;
     }
     
     
@@ -194,19 +209,6 @@ public class Service_MusicPlayer extends Service
     		return 0;
     	}
     }
-    public String getPlayDir()
-    {
-    	return m_PL.m_PlayDir;
-    }
-    public String getPlayFilename()
-    {
-    	return m_PL.m_CurPlay.m_Name;
-    }
-    public String getPlayFileRealPath()
-    {
-    	return m_PL.m_CurPlay.m_RealPath;
-    }
-    
     
 	public class Service_MusicPlayerBinder extends Binder
 	{
@@ -221,17 +223,12 @@ public class Service_MusicPlayer extends Service
 		@Override
 		public void onCompletion(MediaPlayer mp)
 		{
-			if ( !playNext() )
-			{
+			if ( !playNext() ) {
 				m_State = PlayerState.Pause;
 			}
 		}
 		
 	}
-	
-	
-	
-	
-	
+
 	
 }
