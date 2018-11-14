@@ -33,17 +33,18 @@ class tObjectInfo
 }
 
 
-public class LLCOSUtils {
+class LLCOSUtils {
 
-    public static String COS_ROOT_DIR = "LiveLib/";
-    public static String LOCAL_ROOT_DIR = "/sdcard/Download/LiveLib/";
+    static String COS_ROOT_DIR = "LiveLib/";
+    static String LOCAL_ROOT_DIR = "/sdcard/Download/LiveLib/";
+    static String LOCAL_SYS_DIR = LOCAL_ROOT_DIR + "_SYS/";
 
     private CosXmlService cosXmlService;
     private Context context;
 
     private String COS_BUCKET = "g4-livelib-cos-1257773597";
 
-    public void init( Context con ) {
+    void init( Context con ) {
         context = con;
         CosXmlServiceConfig serviceConfig = new CosXmlServiceConfig.Builder()
                 .setAppidAndRegion("1257773597", "ap-chengdu")
@@ -53,7 +54,7 @@ public class LLCOSUtils {
         cosXmlService = new CosXmlService(context, serviceConfig, credentialProvider);
     }
 
-    public List<tObjectInfo> getAllCOSObjectList() {
+    List<tObjectInfo> getAllCOSObjectList() {
 
         System.out.println( "[SyncUtilsCOS getAllCOSObjectList]" );
 
@@ -99,7 +100,7 @@ public class LLCOSUtils {
     }
 
     // get obj local filename if not exist then download it
-    public String getLocalFile( String key, String eTag ) {
+    String getLocalFile( String key, String eTag ) {
 
         String filename = LOCAL_ROOT_DIR + eTag;
         boolean isExist = true;

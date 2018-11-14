@@ -137,8 +137,7 @@ public class MainActivity extends Activity
 			public void onClick(View arg0)
 			{
 				int nPos = m_Service.getCurPos();
-				if ( nPos > 0 )
-				{
+				if ( nPos > 0 ) {
 					nPos = ((nPos-15000)>0)?nPos-15000:0;
 					m_Service.seekTo( nPos );
 				}
@@ -150,8 +149,7 @@ public class MainActivity extends Activity
 			public void onClick(View arg0)
 			{
 				int nPos = m_Service.getCurPos();
-				if ( (nPos+15000) < m_Service.getMaxPos() )
-				{
+				if ( (nPos+15000) < m_Service.getMaxPos() ) {
 					m_Service.seekTo( nPos + 15000 );
 				}
 			}
@@ -162,17 +160,16 @@ public class MainActivity extends Activity
 			public void onClick(View arg0)
 			{
 				int nPos = m_Service.getCurPos();
-				if ( nPos > 0 )
-				{
+				if ( nPos > 0 ) {
 					m_Service.seekTo( 0 );
+					cosLLBrowser.incCurPlayTimes();
 				}
 			}
 		});
         m_btnPlayNext.setOnClickListener(new Button.OnClickListener()
 		{
 			@Override
-			public void onClick(View arg0)
-			{
+			public void onClick(View arg0) {
 				m_Service.playNext();
 			}
 		});
@@ -211,12 +208,10 @@ public class MainActivity extends Activity
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
-		if (id == R.id.action_settings)
-		{
+		if (id == R.id.action_settings) {
 			return true;
 		}
-		else if ( id == R.id.action_addfav )
-		{
+		else if ( id == R.id.action_addfav ) {
 			//m_MyLLAdapter.m_MyBrowser.addCurToFav( m_Service.getPlayFileRealPath() + "/" + m_Service.getPlayFilename() );
 			return true;
 		}
@@ -230,6 +225,7 @@ public class MainActivity extends Activity
 			if ( cosLLAdapter.gotoUpperDir() == 1 ) {
 				return true;
 			} else {
+				cosLLBrowser.close();
 				finish();
 				return true;
 			}
@@ -240,9 +236,9 @@ public class MainActivity extends Activity
 
 
 	private llObjectNode lastPlayingNode = null;
-	ArrayList<Bitmap> m_CoverList = null;
-	int m_CurCover = 0;
-	int m_CoverTimer = 0;
+	private ArrayList<Bitmap> m_CoverList = null;
+	private int m_CurCover = 0;
+	private int m_CoverTimer = 0;
 
 	Handler handler = new Handler();
 	Runnable updateThread = new Runnable() {
@@ -250,10 +246,34 @@ public class MainActivity extends Activity
 		public void run() {
 
 			if ( cosLLBrowser.playingNode != null && cosLLBrowser.playingNode != lastPlayingNode ) {
+
 				lastPlayingNode = cosLLBrowser.playingNode;
 				m_tvPlayingFilename.setText( lastPlayingNode.key );
+				cosLLAdapter.notifyUpdate();
+
+				AsyncTask<String,Void,ArrayList<Bitmap>> syncLoadCover = new AsyncTask<String, Void, ArrayList<Bitmap>>() {
+					@Override
+					protected void onPreExecute() {
+						super.onPreExecute();
+					}
+					@Override
+					protected ArrayList<Bitmap> doInBackground( String... arg ) {
+						ArrayList<Bitmap> ret = m_CoverList = cosLLBrowser.getCoverImage( lastPlayingNode );
+						return ret;
+					}
+					@Override
+					protected void onPostExecute( ArrayList<Bitmap> ret ) {
+						m_CoverList = ret;
+						if ( m_CoverList != null && m_CoverList.size() > 0  ) {
+							m_ivCover.setImageBitmap(m_CoverList.get(0));
+						} else {
+							m_ivCover.setImageBitmap(null);
+						}
+					}
+				};
+				syncLoadCover.execute();
 			}
-			
+
 			if ( m_CoverList != null && m_CoverList.size() > 0 ) {
 				m_CoverTimer++;
 				if ( m_CoverTimer >= 15 ) {
@@ -327,6 +347,10 @@ class MyCOSLLAdapter extends BaseAdapter implements OnItemClickListener {
 		notifyDataSetChanged();
 	}
 
+	public void notifyUpdate() {
+		notifyDataSetChanged();
+	}
+
 	@Override
 	public int getCount() {
 		if ( cosLLBrowser.browsingNode == null ) return 0;
@@ -348,14 +372,11 @@ class MyCOSLLAdapter extends BaseAdapter implements OnItemClickListener {
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		if ( convertView == null )
-		{
+		if ( convertView == null ) {
 			convertView = LayoutInflater.from(myContext).inflate(R.layout.listlayout_ll, parent, false);
-			//convertView = LayoutInflater.from(getApplicationContext()).inflate(R.layout.listlayout_lld, parent, false);
 		}
 
 		TextView tvFilename = (TextView)convertView.findViewById(R.id.ll_ll_filename);
-		//TextView tvFilename = (TextView)convertView.findViewById(R.id.ll_lld_filename);
 
 		String strFileName;
 		if ( position == 0 ) {
