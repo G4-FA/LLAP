@@ -27,6 +27,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity
 {
@@ -85,7 +86,7 @@ public class MainActivity extends Activity
 						e.printStackTrace();
 					}
 
-					m_Service.init( cosLLBrowser );
+					m_Service.init( getApplicationContext(), cosLLBrowser );
 
 					cosLLAdapter = new MyCOSLLAdapter( getApplicationContext(), cosLLBrowser, m_Service );
 
@@ -98,6 +99,9 @@ public class MainActivity extends Activity
                     initView();
                     // start update thread
                     handler.post(updateThread);
+
+					Toast toast = Toast.makeText(MainActivity.this,"init done",Toast.LENGTH_SHORT);
+					toast.show();
                 }
             };
             syncTaskInitUI.execute();
@@ -330,6 +334,7 @@ class MyCOSLLAdapter extends BaseAdapter implements OnItemClickListener {
 	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
 		if ( arg2 == 0 ) {
 			cosLLBrowser.gotoUpperDir();
+            notifyDataSetChanged();
 			return;
 		}
 
@@ -338,10 +343,12 @@ class MyCOSLLAdapter extends BaseAdapter implements OnItemClickListener {
 			case FOLDER:
 				break;
 			case AUDIO_SAMEDIR:
-				playerService.playNewFile();
-				break;
 			case AUDIO_DIFFDIR:
-				playerService.playNewFile();
+				playerService.playNewAudioFile();
+				break;
+			case VEDIO_SAMEDIR:
+			case VEDIO_DIFFDIR:
+				playerService.playNewVideoFile();
 				break;
 		}
 		notifyDataSetChanged();

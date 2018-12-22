@@ -1,22 +1,29 @@
 package com.g4ap.llap;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
+import android.support.v4.content.FileProvider;
+
+import java.io.File;
 
 public class Service_MusicPlayer extends Service
 {
-    PlayerState	m_State;
-    public enum PlayerState
+
+    private enum PlayerState
     {
     	Nil, Initialized, Playing, Pause
     }
+	private PlayerState	m_State;
 	private IBinder binder = new Service_MusicPlayerBinder();
 	private MediaPlayer m_mpPlayer;
 	private COSLLBrowser cosLLBrowser;
+	private Context contex;
 
 	@Override
 	public IBinder onBind(Intent arg0)
@@ -50,13 +57,13 @@ public class Service_MusicPlayer extends Service
 
 	}
 
-	public void init( COSLLBrowser browser )
-	{
+	public void init( Context con, COSLLBrowser browser ) {
+		contex = con;
 		cosLLBrowser = browser;
 	}
 
 
-    public void playNewFile()
+    public void playNewAudioFile()
     {
 		m_mpPlayer.reset();
 		m_State = PlayerState.Nil;
@@ -91,6 +98,56 @@ public class Service_MusicPlayer extends Service
 		syncTaskPlayNewFile.execute();
 
     }
+
+	public void playNewVideoFile()
+	{
+		m_mpPlayer.reset();
+		m_State = PlayerState.Nil;
+
+		AsyncTask<String,Void,String> syncTaskPlayNewFile = new AsyncTask<String,Void,String>() {
+
+			@Override
+			protected void onPreExecute() {
+				super.onPreExecute();
+			}
+
+			@Override
+			protected String doInBackground( String... arg ) {
+				String filename = cosLLBrowser.getLocalFile( cosLLBrowser.playingNode.key, cosLLBrowser.playingNode.eTag );
+				return filename;
+			}
+
+			@Override
+			protected void onPostExecute( String filename ) {
+				try {
+					/*
+					File file = new File( filename );
+					Intent intent = new Intent("android.intent.action.VIEW");
+					intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+					intent.putExtra("oneshot", 0);
+					intent.putExtra("configchange", 0);
+					Uri uri = Uri.fromFile(file);
+					intent.setDataAndType(uri, "video/*");
+					startActivity(intent);
+					*/
+
+					File file = new File( filename );
+					Uri uri = FileProvider.getUriForFile(contex, "LLAP_fileprovider", file);
+					Intent intent = new Intent(Intent.ACTION_VIEW);
+					intent.addCategory(Intent.CATEGORY_DEFAULT);
+					intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+					intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+					intent.setDataAndType(uri, "video/*");
+					startActivity(intent);
+				}
+				catch(Exception e)  {
+					e.printStackTrace();
+				}
+			}
+		};
+		syncTaskPlayNewFile.execute();
+
+	}
 	
     public void startPlayer()
     {

@@ -184,6 +184,7 @@ class COSLLBrowser {
 
         if ( isVedioFile(playingNode.key) ) {
 
+            /*
             int findCur = 0;
             llObjectNode nextNode = null;
 
@@ -206,6 +207,7 @@ class COSLLBrowser {
                 llDB.incPlayTimes( playingNode.eTag );
                 return llClickType.VEDIO_SAMEDIR;
             }
+            */
 
         }
 
@@ -269,7 +271,7 @@ class COSLLBrowser {
             // 已到达路径末尾
 
             // 理论应该不可能是文件夹
-            if ( Size <= 0 || Name.endsWith("/") ) {
+            if ( Name.endsWith("/") ) {
                 throw new Exception("ERROR COSLLBrowser InsertCOSObject end with folder");
             }
             AddChildObject( parent, Name, Key, Size, ETag );
@@ -333,10 +335,10 @@ class COSLLBrowser {
     }
     private boolean isVedioFile( String filename )
     {
-        //if ( filename.endsWith(".mp4") ||
-         //       filename.endsWith(".MP4") ) {
-         //   return true;
-        //}
+        if ( filename.endsWith(".mp4") || filename.endsWith(".avi") ||
+            filename.endsWith(".MP4") || filename.endsWith(".AVI") ) {
+            return true;
+        }
         return false;
     }
     private boolean isCoverFile( String filename )
