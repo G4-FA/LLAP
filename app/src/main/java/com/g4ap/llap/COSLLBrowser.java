@@ -335,8 +335,8 @@ class COSLLBrowser {
     }
     private boolean isVedioFile( String filename )
     {
-        if ( filename.endsWith(".mp4") || filename.endsWith(".avi") ||
-            filename.endsWith(".MP4") || filename.endsWith(".AVI") ) {
+        if ( filename.endsWith(".mp4") || filename.endsWith(".avi") || filename.endsWith(".flv") || filename.endsWith(".webm") || filename.endsWith(".mkv") ||
+            filename.endsWith(".MP4") || filename.endsWith(".AVI") || filename.endsWith(".FLV") || filename.endsWith(".WEBM") || filename.endsWith(".MKV") ) {
             return true;
         }
         return false;

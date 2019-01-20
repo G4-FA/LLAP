@@ -36,7 +36,7 @@ class tObjectInfo
 class LLCOSUtils {
 
     static String COS_ROOT_DIR = "LiveLib/";
-    static String LOCAL_ROOT_DIR = "/sdcard/Download/LiveLib/";
+    static String LOCAL_ROOT_DIR = "/sdcard/_U/LiveLib/";
     static String LOCAL_SYS_DIR = LOCAL_ROOT_DIR + "_SYS/";
 
     private CosXmlService cosXmlService;
