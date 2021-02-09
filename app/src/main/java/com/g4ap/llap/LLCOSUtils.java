@@ -131,5 +131,17 @@ class LLCOSUtils {
         return filename;
     }
 
+    void delLocalFile( String eTag ) {
+
+        String filename = LOCAL_ROOT_DIR + eTag;
+        File file = new File(filename);
+        if (file.exists())
+        {
+            if (file.isFile()){
+                file.delete();
+            }
+        }
+
+    }
 
 }

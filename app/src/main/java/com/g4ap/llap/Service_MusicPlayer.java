@@ -8,9 +8,10 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
-import android.support.v4.content.FileProvider;
 
 import java.io.File;
+
+import androidx.core.content.FileProvider;
 
 public class Service_MusicPlayer extends Service
 {

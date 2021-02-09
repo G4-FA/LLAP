@@ -251,6 +251,13 @@ class COSLLBrowser {
         if ( playingNode != null ) llDB.incPlayTimes( playingNode.eTag );
     }
 
+    void DelCurPlayingFileCache()
+    {
+        if ( playingNode != null )
+        {
+            cosUtil.delLocalFile( playingNode.eTag );
+        }
+    }
 
     private void InsertCOSObject( llObjectNode parent, String Name, String Key, long Size, String ETag ) throws Exception {
 

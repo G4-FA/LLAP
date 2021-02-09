@@ -219,6 +219,10 @@ public class MainActivity extends Activity
 			//m_MyLLAdapter.m_MyBrowser.addCurToFav( m_Service.getPlayFileRealPath() + "/" + m_Service.getPlayFilename() );
 			return true;
 		}
+		else if ( id == R.id.action_delcachefile ) {
+			cosLLBrowser.DelCurPlayingFileCache();
+			return true;
+		}
 		return super.onOptionsItemSelected(item);
 	}
 	
